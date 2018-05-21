@@ -145,7 +145,7 @@ func (ci *Info) Run(args []string) {
 		defer w.done(os.Stderr, 2)
 		w.error(string(e))
 	} else {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 		Exit(1)
 	}
 }
