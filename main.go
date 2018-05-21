@@ -50,8 +50,13 @@ type nilCmd Info
 func (cmd *nilCmd) Info() *Info { return (*Info)(cmd) }
 
 func (cmd *nilCmd) Main(args []string) error {
-	if cmd.cmds != nil {
-		return Error("command not specified")
+	w := newWriter(cmd.Info())
+	defer w.done(os.Stderr, 2)
+	if cmd.cmds == nil {
+		w.WriteString("Command not implemented\n")
+	} else {
+		w.WriteString("Specify command:\n")
+		w.commands()
 	}
-	return Error("command not implemented")
+	return nil
 }
