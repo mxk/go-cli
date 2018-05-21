@@ -45,7 +45,7 @@ func TestNewFlagSet(t *testing.T) {
 		B   bool          `flag:"b3,"`
 		D   time.Duration `flag:""`
 		F64 float64       `flag:"f,Float option description"`
-		I   int           "flag:\",Set `int` value, if you want\""
+		I   int           `flag:",Set <int> value, if you want"`
 		I64 int64         `flag:""`
 		S   string        `flag:""`
 		U   uint          `flag:""`

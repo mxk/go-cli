@@ -40,7 +40,7 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 			continue
 		}
 		j := strings.IndexByte(tag, ',')
-		name, usage := "", tag[j+1:]
+		name, usage := "", convQuote(tag[j+1:])
 		if j > 0 {
 			name = tag[:j]
 		} else {
@@ -85,6 +85,27 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 			panic("cli: unsupported flag type: " + f.Type.String())
 		}
 	}
+}
+
+// convQuote converts "<name>" to "`name`" in usage strings. This format is
+// easier to use in struct field tags.
+func convQuote(usage string) string {
+	i := -1
+	for j := range usage {
+		switch usage[j] {
+		case '<':
+			if i == -1 {
+				i = j
+			}
+		case '>':
+			if i != -1 {
+				return usage[:i] + "`" + usage[i+1:j] + "`" + usage[j+1:]
+			}
+		case '\t', ' ':
+			i = -1
+		}
+	}
+	return usage
 }
 
 // boolPtr implements flag.Value for *bool flags.
