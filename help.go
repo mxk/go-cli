@@ -55,16 +55,17 @@ func (w *Writer) help() {
 	if w.cmds != nil {
 		w.Section("Commands")
 		w.commands()
-		return
+	} else {
+		noOpts := w.Len()
+		w.Section("Options")
+		fs := NewFlagSet(cmd)
+		fs.SetOutput(&w.Buffer)
+		ref := w.Len()
+		if fs.PrintDefaults(); ref == w.Len() {
+			w.Truncate(noOpts)
+		}
 	}
-	noOpts := w.Len()
-	w.Section("Options")
-	fs := NewFlagSet(cmd)
-	fs.SetOutput(&w.Buffer)
-	ref := w.Len()
-	if fs.PrintDefaults(); ref == w.Len() {
-		w.Truncate(noOpts)
-	}
+	w.WriteByte('\n')
 }
 
 // error writes command usage error to w.

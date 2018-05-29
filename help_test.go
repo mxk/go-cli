@@ -47,6 +47,7 @@ func TestHelp(t *testing.T) {
 		Commands:
 		  c1  Command 1
 		  c2  Command 2
+
 	`)[1:], w.String())
 
 	w = newWriter(&c1)
@@ -56,6 +57,7 @@ func TestHelp(t *testing.T) {
 		       bin c1 help
 
 		Command 1.
+
 	`)[1:], w.String())
 
 	w = newWriter(&c2)
@@ -69,6 +71,7 @@ func TestHelp(t *testing.T) {
 		Options:
 		  -opt string
 		    	Option description
+
 	`)[1:], w.String())
 }
 
