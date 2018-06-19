@@ -1,3 +1,4 @@
+// Package cli provides tools for defining command line interfaces.
 package cli
 
 import (
