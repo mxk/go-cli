@@ -13,7 +13,7 @@ var Bin = filepath.Base(os.Args[0])
 // Exit is called by Info.Run() to terminate the process.
 var Exit = os.Exit
 
-// Main is the root of all registered commands without an explicit parent. It is
+// Main may be used as the common root of all commands in a CLI program. It is
 // normally called from main() as follows:
 //
 //	func main() {
