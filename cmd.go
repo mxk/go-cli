@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -148,6 +149,13 @@ func (ci *Info) Run(args []string) {
 		fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 		Exit(1)
 	}
+}
+
+// Help returns a buffer containing command help information.
+func (ci *Info) Help() *bytes.Buffer {
+	w := newWriter(ci)
+	w.help()
+	return &w.Buffer
 }
 
 // fullName returns the fully qualified command name consisting of the prefix,

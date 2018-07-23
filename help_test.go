@@ -35,8 +35,6 @@ func TestHelp(t *testing.T) {
 		New:     func() Cmd { return &helpCmd{ci: &c2} },
 	})
 	Bin = "bin"
-	w := newWriter(&g)
-	w.help()
 	assert.Equal(t, Dedent(`
 		Usage: bin <command> [options] ...
 		       bin <command> help
@@ -48,20 +46,14 @@ func TestHelp(t *testing.T) {
 		  c1  Command 1
 		  c2  Command 2
 
-	`)[1:], w.String())
-
-	w = newWriter(&c1)
-	w.help()
+	`)[1:], g.Help().String())
 	assert.Equal(t, Dedent(`
 		Usage: bin c1
 		       bin c1 help
 
 		Command 1.
 
-	`)[1:], w.String())
-
-	w = newWriter(&c2)
-	w.help()
+	`)[1:], c1.Help().String())
 	assert.Equal(t, Dedent(`
 		Usage: bin {c2|c} usage
 		       bin {c2|c} help
@@ -72,7 +64,7 @@ func TestHelp(t *testing.T) {
 		  -opt string
 		    	Option description
 
-	`)[1:], w.String())
+	`)[1:], c2.Help().String())
 }
 
 func TestDedent(t *testing.T) {
