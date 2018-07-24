@@ -15,7 +15,10 @@ type helpCmd struct {
 
 func (cmd *helpCmd) Info() *Info          { return cmd.ci }
 func (*helpCmd) Main(args []string) error { return nil }
-func (*helpCmd) Help(w *Writer)           { w.Text("Command help.\n\n\n") }
+func (*helpCmd) Help(w *Writer) {
+	w.Text("Command help.")
+	w.Text("Next paragraph.\n\n\n")
+}
 
 func TestHelp(t *testing.T) {
 	var g, c1, c2 Info
@@ -59,6 +62,8 @@ func TestHelp(t *testing.T) {
 		       bin {c2|c} help
 
 		Command help.
+
+		Next paragraph.
 
 		Options:
 		  -opt string

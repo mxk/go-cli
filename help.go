@@ -30,12 +30,15 @@ func (w *Writer) Section(name string) {
 		}
 		w.Write(nl)
 	}
-	w.WriteString(name)
-	w.WriteString(":\n")
+	if name != "" {
+		w.WriteString(name)
+		w.WriteString(":\n")
+	}
 }
 
 // Text writes s to w, removing any indentation and leading/trailing space.
 func (w *Writer) Text(s string) {
+	w.Section("")
 	w.WriteString(strings.TrimSpace(Dedent(s)))
 	w.WriteByte('\n')
 }
