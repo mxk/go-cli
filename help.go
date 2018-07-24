@@ -24,7 +24,8 @@ func newWriter(ci *Info) Writer {
 
 // Section starts a new help section.
 func (w *Writer) Section(name string) {
-	if b, nl := w.Bytes(), []byte("\n\n"); !bytes.HasSuffix(b, nl) {
+	b, nl := w.Bytes(), []byte("\n\n")
+	if len(b) > 0 && !bytes.HasSuffix(b, nl) {
 		if bytes.HasSuffix(b, nl[:1]) {
 			nl = nl[1:]
 		}
