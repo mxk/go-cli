@@ -113,7 +113,7 @@ type boolPtr struct{ v **bool }
 
 func (p boolPtr) String() string {
 	var v bool
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return strconv.FormatBool(v)
@@ -134,7 +134,7 @@ type durPtr struct{ v **time.Duration }
 
 func (p durPtr) String() string {
 	var v time.Duration
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return v.String()
@@ -153,7 +153,7 @@ type f64Ptr struct{ v **float64 }
 
 func (p f64Ptr) String() string {
 	var v float64
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return strconv.FormatFloat(v, 'g', -1, 64)
@@ -172,7 +172,7 @@ type intPtr struct{ v **int }
 
 func (p intPtr) String() string {
 	var v int
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return strconv.Itoa(v)
@@ -192,7 +192,7 @@ type i64Ptr struct{ v **int64 }
 
 func (p i64Ptr) String() string {
 	var v int64
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return strconv.FormatInt(v, 10)
@@ -211,7 +211,7 @@ type strPtr struct{ v **string }
 
 func (p strPtr) String() string {
 	var v string
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return v
@@ -229,7 +229,7 @@ type uintPtr struct{ v **uint }
 
 func (p uintPtr) String() string {
 	var v uint
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return strconv.FormatUint(uint64(v), 10)
@@ -249,7 +249,7 @@ type u64Ptr struct{ v **uint64 }
 
 func (p u64Ptr) String() string {
 	var v uint64
-	if *p.v != nil {
+	if p.v != nil && *p.v != nil {
 		v = **p.v
 	}
 	return strconv.FormatUint(v, 10)

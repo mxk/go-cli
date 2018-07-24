@@ -2,6 +2,7 @@ package cli
 
 import (
 	"flag"
+	"io/ioutil"
 	"strconv"
 	"testing"
 	"time"
@@ -128,6 +129,8 @@ func TestPtrValues(t *testing.T) {
 
 	cl := "-b=false -d=0s -f=0 -i=0 -i64=0 -s= -u=0 -u64=0"
 	fs := NewFlagSet(&v)
+	fs.SetOutput(ioutil.Discard)
+	assert.NotPanics(t, func() { fs.PrintDefaults() })
 	require.NoError(t, fs.Parse(split(cl)))
 	b := false
 	d := time.Duration(0)
