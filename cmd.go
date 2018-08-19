@@ -141,13 +141,18 @@ func (ci *Info) Run(args []string) {
 		w := newWriter(ci)
 		defer w.done(os.Stderr, 0)
 		w.help()
-	} else if e, ok := err.(UsageError); ok {
-		w := newWriter(ci)
-		defer w.done(os.Stderr, 2)
-		w.error(string(e))
 	} else {
-		fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-		Exit(1)
+		switch e := err.(type) {
+		case UsageError:
+			w := newWriter(ci)
+			defer w.done(os.Stderr, 2)
+			w.error(string(e))
+		case ExitCode:
+			Exit(int(e))
+		default:
+			fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			Exit(1)
+		}
 	}
 }
 

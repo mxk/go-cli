@@ -45,6 +45,14 @@ func Errorf(format string, v ...interface{}) UsageError {
 	return UsageError(fmt.Sprintf(format, v...))
 }
 
+// ExitCode is an error that sets the exit code without printing any message.
+type ExitCode int
+
+// Error implements error interface.
+func (e ExitCode) Error() string {
+	return fmt.Sprintf("exit code %d", int(e))
+}
+
 // nilCmd implements Cmd interface for commands without their own constructor.
 type nilCmd Info
 
