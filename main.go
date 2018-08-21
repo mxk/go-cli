@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // Bin is the name of the executing binary.
 var Bin = filepath.Base(os.Args[0])
+
+// Debug determines whether to print debugging information.
+var Debug = false
 
 // Exit is called by Info.Run() to terminate the process.
 var Exit = os.Exit
@@ -22,6 +26,15 @@ var Exit = os.Exit
 var Main Info
 
 func init() { Main.New = func() Cmd { return (*nilCmd)(&Main) } }
+
+// DebugFromEnv sets the Debug flag from the specified environment variable.
+func DebugFromEnv(key string) {
+	if v, ok := os.LookupEnv(key); v == "" {
+		Debug = ok
+	} else {
+		Debug, _ = strconv.ParseBool(v)
+	}
+}
 
 // UsageError reports a problem with command options or positional arguments.
 type UsageError string

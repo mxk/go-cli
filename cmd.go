@@ -150,7 +150,11 @@ func (ci *Info) Run(args []string) {
 		case ExitCode:
 			Exit(int(e))
 		default:
-			fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+			verb := "%v"
+			if Debug {
+				verb = "%+v"
+			}
+			fmt.Fprintf(os.Stderr, "Error: "+verb+"\n", err)
 			Exit(1)
 		}
 	}
