@@ -82,3 +82,15 @@ func (cmd *nilCmd) Main(args []string) error {
 	}
 	return nil
 }
+
+// Sum returns the number of arguments that are true. This can be used to test
+// for mutually exclusive flags.
+func Sum(v ...bool) int {
+	var n int
+	for _, b := range v {
+		if b {
+			n++
+		}
+	}
+	return n
+}
