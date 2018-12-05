@@ -40,6 +40,9 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 			continue
 		}
 		j := strings.IndexByte(tag, ',')
+		if sp := strings.IndexByte(tag, ' '); 0 <= sp && sp < j {
+			j = -1
+		}
 		name, usage := "", convQuote(tag[j+1:])
 		if j > 0 {
 			name = tag[:j]

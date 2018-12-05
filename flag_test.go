@@ -47,7 +47,7 @@ func TestNewFlagSet(t *testing.T) {
 		D   time.Duration `flag:""`
 		F64 float64       `flag:"f,Float option description"`
 		I   int           `flag:",Set <int> value, if you want"`
-		I64 int64         `flag:""`
+		I64 int64         `flag:"Not a name, if space comes first"`
 		S   string        `flag:""`
 		U   uint          `flag:""`
 		U64 uint64        `flag:""`
@@ -85,7 +85,7 @@ func TestNewFlagSet(t *testing.T) {
 			assert.Equal(t, "1", f.Value.String())
 			assert.Equal(t, "0", f.DefValue)
 		case "i64":
-			assert.Equal(t, "", f.Usage)
+			assert.Equal(t, "Not a name, if space comes first", f.Usage)
 			assert.Equal(t, "0", f.Value.String())
 			assert.Equal(t, "0", f.DefValue)
 		case "s":
