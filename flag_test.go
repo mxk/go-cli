@@ -3,7 +3,8 @@ package cli
 import (
 	"flag"
 	"io/ioutil"
-	"strconv"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,166 +12,171 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Enum byte
+func TestNewFlagSet(t *testing.T) {
+	type NoFlag struct{ B byte }
+	assert.NotPanics(t, func() { NewFlagSet(new(NoFlag)) })
 
-func (e Enum) String() string { return string(e) }
+	type BadType struct {
+		B byte `flag:""`
+	}
+	assert.Panics(t, func() { NewFlagSet(new(BadType)) })
 
-func (e *Enum) Set(s string) error {
+	type S1 struct {
+		S1 bool `flag:""`
+	}
+	type S2 struct {
+		S2 bool `flag:""`
+	}
+	type T struct {
+		S1
+		ignore   S2
+		Set      S2
+		NoDesc   bool `flag:""`
+		Desc     bool `flag:"Description"`
+		Name     bool `flag:"n,"`
+		NameDesc bool `flag:"ND,Name description"`
+		NoName   bool `flag:"Not a name,"`
+		Quote    bool `flag:",Flag, with <value>"`
+	}
+	usage := map[string]string{
+		"s1":     "",
+		"s2":     "",
+		"nodesc": "",
+		"desc":   "Description",
+		"n":      "",
+		"ND":     "Name description",
+		"noname": "Not a name,",
+		"quote":  "Flag, with `value`",
+	}
+
+	have := T{S1: S1{true}, NoDesc: true}
+	fs := NewFlagSet(&have)
+	require.NoError(t, fs.Parse(split("-s1=false -s2")))
+	require.Equal(t, T{Set: S2{true}, NoDesc: true}, have)
+
+	tf := map[bool]string{false: "false", true: "true"}
+	fs.VisitAll(func(f *flag.Flag) {
+		u, ok := usage[f.Name]
+		if !ok {
+			t.Errorf("unknown flag name %q", f.Name)
+			return
+		}
+		assert.Equal(t, u, f.Usage, "%s", f.Name)
+		defVal := tf[f.Name == "s1" || f.Name == "nodesc"]
+		strVal := tf[f.Name == "s2" || f.Name == "nodesc"]
+		assert.Equal(t, defVal, f.DefValue, "%s", f.Name)
+		assert.Equal(t, strVal, f.Value.String(), "%s", f.Name)
+		delete(usage, f.Name)
+	})
+	assert.Empty(t, usage)
+}
+
+func TestFlagTypes(t *testing.T) {
+	ptr := func(x interface{}) interface{} {
+		v := reflect.ValueOf(x)
+		p := reflect.New(v.Type())
+		p.Elem().Set(v)
+		return p.Interface()
+	}
+	type T struct {
+		Bool     bool          `flag:""`
+		Duration time.Duration `flag:""`
+		Float64  float64       `flag:""`
+		Int      int           `flag:""`
+		Int64    int64         `flag:""`
+		String   string        `flag:""`
+		Uint     uint          `flag:""`
+		Uint64   uint64        `flag:""`
+		XY       XY            `flag:""`
+
+		BoolPtr     *bool          `flag:""`
+		DurationPtr *time.Duration `flag:""`
+		Float64Ptr  *float64       `flag:""`
+		IntPtr      *int           `flag:""`
+		Int64Ptr    *int64         `flag:""`
+		StringPtr   *string        `flag:""`
+		UintPtr     *uint          `flag:""`
+		Uint64Ptr   *uint64        `flag:""`
+
+		Slice []string          `flag:""`
+		Map   map[string]string `flag:""`
+	}
+	type test struct {
+		Name    string
+		Default string
+		Set     string
+		Get     interface{}
+		String  string
+	}
+	tests := []*test{
+		{"Bool", "false", "-bool", true, "true"},
+		{"Duration", "0s", "-duration=1s", time.Second, "1s"},
+		{"Float64", "0", "-float64=0.1", 0.1, "0.1"},
+		{"Int", "0", "-int=1", 1, "1"},
+		{"Int64", "0", "-int64=-1", int64(-1), "-1"},
+		{"String", "", "-string=x", "x", "x"},
+		{"Uint", "0", "-uint=1", uint(1), "1"},
+		{"Uint64", "0", "-uint64=2", uint64(2), "2"},
+		{"XY", "X", "-xy=y", XY('Y'), "Y"},
+
+		{"BoolPtr", "false", "-boolptr", ptr(true), "true"},
+		{"DurationPtr", "0s", "-durationptr=2s", ptr(2 * time.Second), "2s"},
+		{"Float64Ptr", "0", "-float64ptr=0.2", ptr(0.2), "0.2"},
+		{"IntPtr", "0", "-intptr=2", ptr(2), "2"},
+		{"Int64Ptr", "0", "-int64ptr=-2", ptr(int64(-2)), "-2"},
+		{"StringPtr", "", "-stringptr=y", ptr("y"), "y"},
+		{"UintPtr", "0", "-uintptr=3", ptr(uint(3)), "3"},
+		{"Uint64Ptr", "0", "-uint64ptr=4", ptr(uint64(4)), "4"},
+
+		{"Slice", "[]", "-slice=a -slice=b", []string{"a", "b"}, "[a b]"},
+		{"Map", "{}", "-map=a=1 -map=b=2", map[string]string{"a": "1", "b": "2"}, "{a=1 b=2}"},
+	}
+
+	var have, want T
+	var args []string
+	flagMap := make(map[string]*test, len(tests))
+	v := reflect.ValueOf(&want).Elem()
+	for _, tc := range tests {
+		args = append(args, split(tc.Set)...)
+		v.FieldByName(tc.Name).Set(reflect.ValueOf(tc.Get))
+		flagMap[strings.ToLower(tc.Name)] = tc
+	}
+	fs := NewFlagSet(&have)
+	fs.SetOutput(ioutil.Discard)
+	assert.NotPanics(t, func() { fs.PrintDefaults() })
+	require.NoError(t, fs.Parse(args))
+	require.Equal(t, want, have)
+
+	fs.VisitAll(func(f *flag.Flag) {
+		tc := flagMap[f.Name]
+		if tc == nil {
+			t.Errorf("unknown flag name %q", f.Name)
+			return
+		}
+		assert.Equal(t, tc.Default, f.DefValue, "%+v", tc)
+		assert.Equal(t, tc.String, f.Value.String(), "%+v", tc)
+		assert.Equal(t, tc.Get, f.Value.(flag.Getter).Get(), "%+v", tc)
+		delete(flagMap, f.Name)
+	})
+	assert.Empty(t, flagMap)
+}
+
+type XY byte
+
+func (v XY) String() string {
+	if v == 0 {
+		return "X"
+	}
+	return string(v)
+}
+
+func (v *XY) Set(s string) error {
 	switch s {
-	case "x", "y":
-		*e = Enum(s[0])
+	case "x", "X", "y", "Y":
+		*v = XY(s[0] &^ 0x20)
 		return nil
 	}
 	return Errorf("invalid enum value %q", s)
 }
 
-func TestNewFlagSet(t *testing.T) {
-	type Good struct{ B byte }
-	assert.NotPanics(t, func() { NewFlagSet(new(Good)) })
-
-	type Bad struct {
-		B byte `flag:""`
-	}
-	assert.Panics(t, func() { NewFlagSet(new(Bad)) })
-
-	type B1 struct {
-		B1 bool `flag:""`
-	}
-	type B2 struct {
-		B2 bool `flag:""`
-	}
-	type T struct {
-		B1
-		B2  *B2
-		Nil *B2
-		B   bool          `flag:"b3,"`
-		D   time.Duration `flag:""`
-		F64 float64       `flag:"f,Float option description"`
-		I   int           `flag:",Set <int> value, if you want"`
-		I64 int64         `flag:"Not a name, if space comes first"`
-		S   string        `flag:""`
-		U   uint          `flag:""`
-		U64 uint64        `flag:""`
-		V   Enum          `flag:""`
-	}
-	names := split("b1 b2 b3 d f i i64 s u u64 v")
-
-	v := T{B2: new(B2), B: true, S: "default", V: Enum('x')}
-	want := v
-	fs := NewFlagSet(&v)
-	require.NoError(t, fs.Parse(split("-b1 -b3=false -i=1 -v y")))
-	want.B1.B1 = true
-	want.B = false
-	want.I = 1
-	want.V = Enum('y')
-	require.Equal(t, want, v)
-
-	var actual []string
-	fs.VisitAll(func(f *flag.Flag) {
-		switch f.Name {
-		case "b1", "b2", "b3":
-			assert.Equal(t, "", f.Usage)
-			assert.Equal(t, strconv.FormatBool(f.Name == "b1"), f.Value.String())
-			assert.Equal(t, strconv.FormatBool(f.Name == "b3"), f.DefValue)
-		case "d":
-			assert.Equal(t, "", f.Usage)
-			assert.Equal(t, "0s", f.Value.String())
-			assert.Equal(t, "0s", f.DefValue)
-		case "f":
-			assert.Equal(t, "Float option description", f.Usage)
-			assert.Equal(t, "0", f.Value.String())
-			assert.Equal(t, "0", f.DefValue)
-		case "i":
-			assert.Equal(t, "Set `int` value, if you want", f.Usage)
-			assert.Equal(t, "1", f.Value.String())
-			assert.Equal(t, "0", f.DefValue)
-		case "i64":
-			assert.Equal(t, "Not a name, if space comes first", f.Usage)
-			assert.Equal(t, "0", f.Value.String())
-			assert.Equal(t, "0", f.DefValue)
-		case "s":
-			assert.Equal(t, "", f.Usage)
-			assert.Equal(t, "default", f.Value.String())
-			assert.Equal(t, "default", f.DefValue)
-		case "u":
-			assert.Equal(t, "", f.Usage)
-			assert.Equal(t, "0", f.Value.String())
-			assert.Equal(t, "0", f.DefValue)
-		case "u64":
-			assert.Equal(t, "", f.Usage)
-			assert.Equal(t, "0", f.Value.String())
-			assert.Equal(t, "0", f.DefValue)
-		case "v":
-			assert.Equal(t, "", f.Usage)
-			assert.Equal(t, "y", f.Value.String())
-			assert.Equal(t, "x", f.DefValue)
-		default:
-			t.Fatalf("unexpected flag name %q", f.Name)
-		}
-		actual = append(actual, f.Name)
-	})
-	assert.Equal(t, names, actual)
-}
-
-func TestPtrValues(t *testing.T) {
-	type T struct {
-		B   *bool          `flag:"Test"`
-		D   *time.Duration `flag:""`
-		F   *float64       `flag:""`
-		I   *int           `flag:""`
-		I64 *int64         `flag:""`
-		S   *string        `flag:""`
-		U   *uint          `flag:""`
-		U64 *uint64        `flag:""`
-	}
-	v := T{}
-	require.NoError(t, NewFlagSet(&v).Parse(nil))
-	require.Equal(t, T{}, v)
-
-	cl := "-b=false -d=0s -f=0 -i=0 -i64=0 -s= -u=0 -u64=0"
-	fs := NewFlagSet(&v)
-	fs.SetOutput(ioutil.Discard)
-	assert.NotPanics(t, func() { fs.PrintDefaults() })
-	require.NoError(t, fs.Parse(split(cl)))
-	b := false
-	d := time.Duration(0)
-	f := float64(0)
-	i := int(0)
-	i64 := int64(0)
-	s := ""
-	u := uint(0)
-	u64 := uint64(0)
-	want := T{&b, &d, &f, &i, &i64, &s, &u, &u64}
-	require.Equal(t, want, v)
-
-	fs.VisitAll(func(f *flag.Flag) {
-		switch g := f.Value.(flag.Getter).Get(); f.Name {
-		case "b":
-			assert.Equal(t, v.B, g.(*bool))
-		case "d":
-			assert.Equal(t, v.D, g.(*time.Duration))
-		case "f":
-			assert.Equal(t, v.F, g.(*float64))
-		case "i":
-			assert.Equal(t, v.I, g.(*int))
-		case "i64":
-			assert.Equal(t, v.I64, g.(*int64))
-		case "s":
-			assert.Equal(t, v.S, g.(*string))
-		case "u":
-			assert.Equal(t, v.U, g.(*uint))
-		case "u64":
-			assert.Equal(t, v.U64, g.(*uint64))
-		default:
-			t.Fatalf("unexpected flag name %q", f.Name)
-		}
-	})
-
-	cl = "-b -d=1s -f=1.0 -i=1 -i64=0x1 -s=xyz -u=1 -u64=0x1"
-	require.NoError(t, NewFlagSet(&v).Parse(split(cl)))
-	require.NotEqual(t, want, v)
-
-	cl = "-b=false -d=0s -f=0 -i=0 -i64=0 -s= -u=0 -u64=0"
-	require.NoError(t, NewFlagSet(&v).Parse(split(cl)))
-	require.Equal(t, want, v)
-}
+func (v XY) Get() interface{} { return v }

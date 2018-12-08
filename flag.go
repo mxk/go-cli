@@ -2,8 +2,10 @@ package cli
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -34,7 +36,7 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 			if fv.Kind() == reflect.Ptr {
 				fv = fv.Elem()
 			}
-			if fv.Kind() == reflect.Struct {
+			if fv.Kind() == reflect.Struct && fv.CanInterface() {
 				defineFlags(fs, fv)
 			}
 			continue
@@ -84,6 +86,10 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 			fs.Var(uintPtr{p}, name, usage)
 		case **uint64:
 			fs.Var(u64Ptr{p}, name, usage)
+		case *[]string:
+			fs.Var(strSlice{p}, name, usage)
+		case *map[string]string:
+			fs.Var(strMap{p}, name, usage)
 		default:
 			panic("cli: unsupported flag type: " + f.Type.String())
 		}
@@ -265,3 +271,65 @@ func (p u64Ptr) Set(s string) error {
 }
 
 func (p u64Ptr) Get() interface{} { return *p.v }
+
+// strSlice implements flag.Value for []string flags.
+type strSlice struct{ v *[]string }
+
+func (p strSlice) String() string {
+	var v []string
+	if p.v != nil {
+		v = *p.v
+	}
+	return fmt.Sprint(v)
+}
+
+func (p strSlice) Set(s string) error {
+	*p.v = append(*p.v, s)
+	return nil
+}
+
+func (p strSlice) Get() interface{} { return *p.v }
+
+// strMap implements flag.Value for map[string]string flags.
+type strMap struct{ v *map[string]string }
+
+func (p strMap) String() string {
+	var v map[string]string
+	if p.v != nil {
+		v = *p.v
+	}
+	var sb strings.Builder
+	sb.Grow(2 + 16*len(v))
+	sb.WriteByte('{')
+	if len(v) > 0 {
+		keys := make([]string, 0, len(v))
+		for k := range *p.v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for i, k := range keys {
+			if i > 0 {
+				sb.WriteByte(' ')
+			}
+			sb.WriteString(k)
+			sb.WriteByte('=')
+			sb.WriteString(v[k])
+		}
+	}
+	sb.WriteByte('}')
+	return sb.String()
+}
+
+func (p strMap) Set(s string) error {
+	i := strings.IndexByte(s, '=')
+	if i < 0 {
+		return fmt.Errorf("cli: missing '=' in %q", s)
+	}
+	if *p.v == nil {
+		*p.v = make(map[string]string)
+	}
+	(*p.v)[s[:i]] = s[i+1:]
+	return nil
+}
+
+func (p strMap) Get() interface{} { return *p.v }
