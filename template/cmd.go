@@ -13,6 +13,9 @@ import (
 // written without executing it.
 const Show = "show"
 
+// FuncMap is an alias for standard FuncMap type.
+type FuncMap = template.FuncMap
+
 // Cmd provides common functionality for implementing commands that render data
 // with text/template package. Default should be set to the default template
 // contents.
@@ -22,6 +25,8 @@ type Cmd struct {
 	Template string `flag:"Custom template <file> (use '-' for stdin or 'show' to show default)"`
 
 	Default string
+	FuncMap FuncMap
+	Options []string
 }
 
 // Write writes rendered data to the output file.
@@ -45,22 +50,24 @@ func (c *Cmd) Execute(w io.Writer, data interface{}) error {
 		enc.SetIndent("", "\t")
 		return enc.Encode(data)
 	}
-	var t *template.Template
+	t := template.New("").Funcs(c.FuncMap).Option(c.Options...)
 	var err error
 	switch c.Template {
 	case "":
-		t, err = template.New("").Parse(c.Default)
-	case "-":
-		b, ioerr := ioutil.ReadAll(io.LimitReader(os.Stdin, 8*1024*1024))
-		if ioerr != nil {
-			return ioerr
-		}
-		t, err = template.New("").Parse(string(b))
+		_, err = t.Parse(c.Default)
 	case Show:
 		_, err = io.WriteString(w, c.Default)
 		return err
 	default:
-		t, err = template.ParseFiles(c.Template)
+		var b []byte
+		if c.Template == "-" {
+			b, err = ioutil.ReadAll(io.LimitReader(os.Stdin, 8*1024*1024))
+		} else {
+			b, err = ioutil.ReadFile(c.Template)
+		}
+		if err == nil {
+			_, err = t.Parse(string(b))
+		}
 	}
 	if err == nil {
 		err = t.Execute(w, data)
