@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 	"text/template"
+
+	"github.com/LuminalHQ/cloudcover/x/cli"
 )
 
 // Show is a special -template argument that causes the default template to be
@@ -21,7 +23,7 @@ type FuncMap = template.FuncMap
 // contents.
 type Cmd struct {
 	JSON     bool   `flag:"Write raw data in JSON format"`
-	Out      string `flag:"Output <file> name"`
+	Out      string `flag:"Output <file>"`
 	Template string `flag:"Custom template <file> (use '-' for stdin or 'show' to show default)"`
 
 	Default string
@@ -35,11 +37,10 @@ func (c *Cmd) Write(data interface{}) error {
 	if err := c.Execute(&b, data); err != nil {
 		return err
 	}
-	if c.Out == "" || c.Out == "-" {
+	return cli.WriteFile(c.Out, func(w io.Writer) error {
 		_, err := b.WriteTo(os.Stdout)
 		return err
-	}
-	return ioutil.WriteFile(c.Out, b.Bytes(), 0666)
+	})
 }
 
 // Execute applies current template to data and writes the output to w.
