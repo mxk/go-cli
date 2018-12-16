@@ -3,11 +3,9 @@ package cli
 import (
 	"errors"
 	"flag"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -115,25 +113,25 @@ func TestExit(t *testing.T) {
 
 	Bin = "bin"
 	err = flag.ErrHelp
-	done, rc := intercept(&os.Stderr), resetExit()
+	done, rc := interceptWrite(&os.Stderr), resetExit()
 	ci.Run(nil)
 	assert.Equal(t, "Usage: bin\n       bin help\n\n", done())
 	assert.Equal(t, 2, *rc)
 
 	err = UsageError("usage error")
-	done, rc = intercept(&os.Stderr), resetExit()
+	done, rc = interceptWrite(&os.Stderr), resetExit()
 	ci.Run(nil)
 	assert.Equal(t, "Error: usage error\nUsage: bin\n       bin help\n", done())
 	assert.Equal(t, 2, *rc)
 
 	err = ExitCode(42)
-	done, rc = intercept(&os.Stderr), resetExit()
+	done, rc = interceptWrite(&os.Stderr), resetExit()
 	ci.Run(nil)
 	assert.Equal(t, "", done())
 	assert.Equal(t, 42, *rc)
 
 	err = errors.New("fail")
-	done, rc = intercept(&os.Stderr), resetExit()
+	done, rc = interceptWrite(&os.Stderr), resetExit()
 	ci.Run(nil)
 	assert.Equal(t, "Error: fail\n", done())
 	assert.Equal(t, 1, *rc)
@@ -153,32 +151,4 @@ func resetExit() *int {
 		rc = code
 	}
 	return &rc
-}
-
-func intercept(f **os.File) func() string {
-	r, w, err := os.Pipe()
-	if err != nil {
-		panic(err)
-	}
-	orig := *f
-	*f = w
-	ch := make(chan string)
-	go func() {
-		defer close(ch)
-		b, err := ioutil.ReadAll(r)
-		if err != nil {
-			panic(err)
-		}
-		ch <- string(b)
-	}()
-	return func() string {
-		w.Close()
-		select {
-		case out := <-ch:
-			*f = orig
-			return out
-		case <-time.After(time.Second):
-			panic("timeout")
-		}
-	}
 }
