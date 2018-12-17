@@ -38,7 +38,7 @@ func (c *Cmd) Write(data interface{}) error {
 		return err
 	}
 	return cli.WriteFile(c.Out, func(w io.Writer) error {
-		_, err := b.WriteTo(os.Stdout)
+		_, err := b.WriteTo(w)
 		return err
 	})
 }
