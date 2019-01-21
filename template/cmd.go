@@ -8,7 +8,7 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/LuminalHQ/cloudcover/x/cli"
+	"github.com/mxk/cloudcover/x/cli"
 )
 
 // Show is a special -template argument that causes the default template to be
