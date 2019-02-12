@@ -49,27 +49,27 @@ type Info struct {
 	cmds   map[string]*Info // Sub-commands
 }
 
-// Add registers command ci with parent p.
-func (p *Info) Add(ci *Info) *Info {
-	if ci.New == nil {
-		ci.New = func() Cmd { return (*nilCmd)(ci) }
+// Add registers child command with parent ci.
+func (ci *Info) Add(child *Info) *Info {
+	if child.New == nil {
+		child.New = func() Cmd { return (*nilCmd)(child) }
 	}
-	if ci.parent != nil {
-		panic("cli: command already added to a parent: " + ci.Name)
+	if child.parent != nil {
+		panic("cli: command already added to a parent: " + child.Name)
 	}
-	if ci.parent = p; p.cmds == nil {
-		p.cmds = make(map[string]*Info)
+	if child.parent = ci; ci.cmds == nil {
+		ci.cmds = make(map[string]*Info)
 	}
-	for _, name := range strings.Split(ci.Name, string(nameSep)) {
+	for _, name := range strings.Split(child.Name, string(nameSep)) {
 		if name == "" {
 			panic("cli: missing command name")
 		}
-		if _, dup := p.cmds[name]; dup {
+		if _, dup := ci.cmds[name]; dup {
 			panic("cli: duplicate command name: " + name)
 		}
-		p.cmds[name] = ci
+		ci.cmds[name] = child
 	}
-	return ci
+	return child
 }
 
 // PrimaryName returns the first entry in ci.Name.
