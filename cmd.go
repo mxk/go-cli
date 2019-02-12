@@ -128,8 +128,11 @@ func (ci *Info) Parse(args []string) (Cmd, []string, error) {
 }
 
 // Run parses the arguments, runs the requested commands, and terminates the
-// process via Exit.
-func (ci *Info) Run(args []string) {
+// process via Exit. If args is nil, os.Args[1:] is used by default.
+func (ci *Info) Run(args ...string) {
+	if args == nil {
+		args = os.Args[1:]
+	}
 	cmd, args, err := ci.Parse(args)
 	if err == nil {
 		if err = cmd.Main(args); err == nil {

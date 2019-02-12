@@ -75,7 +75,10 @@ func TestCmd(t *testing.T) {
 	require.Equal(t, split("a b"), args)
 
 	rc := resetExit()
-	Main.Run(split("g c3 x"))
+	oldArgs := os.Args
+	os.Args = split("prog g c3 x")
+	Main.Run()
+	os.Args = oldArgs
 	assert.Equal(t, 0, *rc)
 	assert.Equal(t, split("x"), mainArgs)
 	Exit = os.Exit
@@ -110,29 +113,30 @@ func TestExit(t *testing.T) {
 	var ci Info
 	var err error
 	ci = Info{New: newTestCmd(&ci, func([]string) error { return err })}
+	noArgs := make([]string, 0)
 
 	Bin = "bin"
 	err = flag.ErrHelp
 	done, rc := interceptWrite(&os.Stderr), resetExit()
-	ci.Run(nil)
+	ci.Run(noArgs...)
 	assert.Equal(t, "Usage: bin\n       bin help\n\n", done())
 	assert.Equal(t, 2, *rc)
 
 	err = UsageError("usage error")
 	done, rc = interceptWrite(&os.Stderr), resetExit()
-	ci.Run(nil)
+	ci.Run(noArgs...)
 	assert.Equal(t, "Error: usage error\nUsage: bin\n       bin help\n", done())
 	assert.Equal(t, 2, *rc)
 
 	err = ExitCode(42)
 	done, rc = interceptWrite(&os.Stderr), resetExit()
-	ci.Run(nil)
+	ci.Run(noArgs...)
 	assert.Equal(t, "", done())
 	assert.Equal(t, 42, *rc)
 
 	err = errors.New("fail")
 	done, rc = interceptWrite(&os.Stderr), resetExit()
-	ci.Run(nil)
+	ci.Run(noArgs...)
 	assert.Equal(t, "Error: fail\n", done())
 	assert.Equal(t, 1, *rc)
 }
