@@ -1,3 +1,4 @@
+// Package template simplifies the definition of text/template-based commands.
 package template
 
 import (
