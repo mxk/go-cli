@@ -32,7 +32,7 @@ const nameSep = '|'
 //		New:  func() cli.Cmd { return &cmd{Opt: "default-value"} },
 //	})
 //
-//	type cmd struct{ Opt string `flag:"Option description"` }
+//	type cmd struct{ Opt string `cli:"Option description"` }
 //
 //	func (*cmd) Info() *cli.Info          { return info }
 //	func (*cmd) Main(args []string) error { return nil }

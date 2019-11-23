@@ -10,7 +10,7 @@ import (
 
 type helpCmd struct {
 	ci  *Info
-	Opt string `flag:"Option description"`
+	Opt string `cli:"Option description"`
 }
 
 func (cmd *helpCmd) Info() *Info          { return cmd.ci }

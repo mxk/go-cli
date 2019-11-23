@@ -23,9 +23,9 @@ type FuncMap = template.FuncMap
 // with text/template package. Default should be set to the default template
 // contents.
 type Cmd struct {
-	JSON     bool   `flag:"Write raw data in JSON format"`
-	Out      string `flag:"Output <file>"`
-	Template string `flag:"Custom template <file> (use '-' for stdin or 'show' to show default)"`
+	JSON     bool   `cli:"Write raw data in JSON format"`
+	Out      string `cli:"Output {file}"`
+	Template string `cli:"Custom template {file} (use '-' for stdin or 'show' to show default)"`
 
 	Default string
 	FuncMap FuncMap

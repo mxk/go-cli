@@ -17,26 +17,26 @@ func TestNewFlagSet(t *testing.T) {
 	assert.NotPanics(t, func() { NewFlagSet(new(NoFlag)) })
 
 	type BadType struct {
-		B byte `flag:""`
+		B byte `cli:""`
 	}
 	assert.Panics(t, func() { NewFlagSet(new(BadType)) })
 
 	type S1 struct {
-		S1 bool `flag:""`
+		S1 bool `cli:""`
 	}
 	type S2 struct {
-		S2 bool `flag:""`
+		S2 bool `cli:""`
 	}
 	type T struct {
 		S1
 		ignore   S2
 		Set      S2
-		NoDesc   bool `flag:""`
-		Desc     bool `flag:"Description"`
-		Name     bool `flag:"n,"`
-		NameDesc bool `flag:"ND,Name description"`
-		NoName   bool `flag:"Not a name,"`
-		Quote    bool `flag:",Flag, with <value>"`
+		NoDesc   bool `cli:""`
+		Desc     bool `cli:"Description"`
+		Name     bool `cli:"n,"`
+		NameDesc bool `cli:"ND,Name description"`
+		NoName   bool `cli:"Not a name,"`
+		Quote    bool `cli:",Flag, with <value>"`
 	}
 	usage := map[string]string{
 		"s1":     "",
@@ -79,27 +79,27 @@ func TestFlagTypes(t *testing.T) {
 		return p.Interface()
 	}
 	type T struct {
-		Bool     bool          `flag:""`
-		Duration time.Duration `flag:""`
-		Float64  float64       `flag:""`
-		Int      int           `flag:""`
-		Int64    int64         `flag:""`
-		String   string        `flag:""`
-		Uint     uint          `flag:""`
-		Uint64   uint64        `flag:""`
-		XY       XY            `flag:""`
+		Bool     bool          `cli:""`
+		Duration time.Duration `cli:""`
+		Float64  float64       `cli:""`
+		Int      int           `cli:""`
+		Int64    int64         `cli:""`
+		String   string        `cli:""`
+		Uint     uint          `cli:""`
+		Uint64   uint64        `cli:""`
+		XY       XY            `cli:""`
 
-		BoolPtr     *bool          `flag:""`
-		DurationPtr *time.Duration `flag:""`
-		Float64Ptr  *float64       `flag:""`
-		IntPtr      *int           `flag:""`
-		Int64Ptr    *int64         `flag:""`
-		StringPtr   *string        `flag:""`
-		UintPtr     *uint          `flag:""`
-		Uint64Ptr   *uint64        `flag:""`
+		BoolPtr     *bool          `cli:""`
+		DurationPtr *time.Duration `cli:""`
+		Float64Ptr  *float64       `cli:""`
+		IntPtr      *int           `cli:""`
+		Int64Ptr    *int64         `cli:""`
+		StringPtr   *string        `cli:""`
+		UintPtr     *uint          `cli:""`
+		Uint64Ptr   *uint64        `cli:""`
 
-		Slice []string          `flag:""`
-		Map   map[string]string `flag:""`
+		Slice []string          `cli:""`
+		Map   map[string]string `cli:""`
 	}
 	type test struct {
 		Name    string

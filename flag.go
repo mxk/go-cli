@@ -30,7 +30,7 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 	n := v.NumField()
 	for i := 0; i < n; i++ {
 		f := t.Field(i)
-		tag, ok := f.Tag.Lookup("flag")
+		tag, ok := f.Tag.Lookup("cli")
 		if !ok {
 			fv := v.Field(i)
 			if fv.Kind() == reflect.Ptr {

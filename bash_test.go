@@ -49,10 +49,10 @@ func TestCompgen(t *testing.T) {
 }
 
 type cmd1 struct {
-	B  bool   `flag:"bool"`
-	F  string `flag:"<file>"`
-	D  string `flag:"<dir>"`
-	XZ string `flag:"x-z,"`
+	B  bool   `cli:"bool"`
+	F  string `cli:"<file>"`
+	D  string `cli:"<dir>"`
+	XZ string `cli:"x-z,"`
 }
 
 func (*cmd1) Info() *Info              { return nil }
