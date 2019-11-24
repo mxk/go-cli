@@ -8,7 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type helpCmd struct{ Opt string `cli:"Option description"` }
+type helpCmd struct {
+	Opt string `cli:"Option description"`
+}
 
 func (*helpCmd) Main(args []string) error { return nil }
 func (*helpCmd) Help(w *Writer) {

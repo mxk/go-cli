@@ -36,17 +36,19 @@ func TestNewFlagSet(t *testing.T) {
 		Name     bool `cli:"n,"`
 		NameDesc bool `cli:"ND,Name description"`
 		NoName   bool `cli:"Not a name,"`
-		Quote    bool `cli:",Flag, with <value>"`
+		Quote    bool `cli:",Flag, with {value}"`
+		NoQuote  bool `cli:"Flag {without value}"`
 	}
 	usage := map[string]string{
-		"s1":     "",
-		"s2":     "",
-		"nodesc": "",
-		"desc":   "Description",
-		"n":      "",
-		"ND":     "Name description",
-		"noname": "Not a name,",
-		"quote":  "Flag, with `value`",
+		"s1":      "",
+		"s2":      "",
+		"nodesc":  "",
+		"desc":    "Description",
+		"n":       "",
+		"ND":      "Name description",
+		"noname":  "Not a name,",
+		"quote":   "Flag, with `value`",
+		"noquote": "Flag {without value}",
 	}
 
 	have := T{S1: S1{true}, NoDesc: true}

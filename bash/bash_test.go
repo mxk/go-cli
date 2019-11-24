@@ -54,8 +54,8 @@ func TestCompgen(t *testing.T) {
 
 type cmd1 struct {
 	B  bool   `cli:"bool"`
-	F  string `cli:"<file>"`
-	D  string `cli:"<dir>"`
+	F  string `cli:"{file}"`
+	D  string `cli:"{dir}"`
 	XZ string `cli:"x-z,"`
 }
 
