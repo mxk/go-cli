@@ -12,7 +12,11 @@ import (
 var Bin = filepath.Base(os.Args[0])
 
 // Debug determines whether to print debugging information.
-var Debug = false
+var Debug bool
+
+// DebugSpec is set via DebugFromEnv to the contents of the specified
+// environment variable. It is not used by the cli package itself.
+var DebugSpec string
 
 // Exit is called by Cfg.Run() to terminate the process.
 var Exit = os.Exit
@@ -23,12 +27,15 @@ var Exit = os.Exit
 //	func main() { cli.Main.Run() }
 var Main Cfg
 
-// DebugFromEnv sets the Debug flag from the specified environment variable.
+// DebugFromEnv sets Debug and DebugSpec from an environment variable. If the
+// variable contains a bool string, DebugSpec is cleared and Debug is set to the
+// bool value.
 func DebugFromEnv(key string) {
-	if v, ok := os.LookupEnv(key); v == "" {
-		Debug = ok
-	} else {
-		Debug, _ = strconv.ParseBool(v)
+	if DebugSpec, Debug = os.LookupEnv(key); DebugSpec == "" {
+		return
+	}
+	if b, err := strconv.ParseBool(DebugSpec); err == nil {
+		DebugSpec, Debug = "", b
 	}
 }
 
@@ -38,7 +45,8 @@ type UsageError string
 // Error implements error interface.
 func (e UsageError) Error() string { return string(e) }
 
-// Error returns a new UsageError, formatting arguments via fmt.Sprintln.
+// Error returns a new UsageError, formatting arguments via fmt.Sprintln, but
+// without the final newline.
 func Error(v ...interface{}) UsageError {
 	if len(v) == 1 {
 		if s, ok := v[0].(string); ok {
