@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"runtime/debug"
-	"sort"
 	"strings"
 )
 
@@ -102,20 +101,17 @@ func (w *Writer) usage() {
 
 // commands writes a list of all commands with their summaries to w.
 func (w *Writer) commands() {
-	names, maxLen := make([]string, 0, len(w.cmds)), 0
-	for name, c := range w.cmds {
-		if !c.Hide && name == Name(c) {
-			if names = append(names, name); maxLen < len(name) {
-				maxLen = len(name)
-			}
+	cmds, maxLen := w.Children(), 0
+	for _, c := range cmds {
+		if name := Name(c); maxLen < len(name) {
+			maxLen = len(name)
 		}
 	}
-	sort.Strings(names)
-	for _, name := range names {
-		if summary := w.cmds[name].Summary; summary == "" {
-			fmt.Fprintf(w, "  %s\n", name)
+	for _, c := range cmds {
+		if c.Summary == "" {
+			fmt.Fprintf(w, "  %s\n", Name(c))
 		} else {
-			fmt.Fprintf(w, "  %-*s  %s\n", maxLen, name, summary)
+			fmt.Fprintf(w, "  %-*s  %s\n", maxLen, Name(c), c.Summary)
 		}
 	}
 }

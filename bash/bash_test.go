@@ -1,24 +1,24 @@
-package cli
+package bash
 
 import (
 	"testing"
 
+	"github.com/mxk/go-cli"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCompgen(t *testing.T) {
-	var main Cfg
-	main.Add(&Cfg{
+	var main cli.Cfg
+	main.Add(&cli.Cfg{
 		Name: "cmd1|c1",
-		New:  func() Cmd { return new(cmd1) },
+		New:  func() cli.Cmd { return new(cmd1) },
 	})
-	main.Add(&Cfg{
+	main.Add(&cli.Cfg{
 		Name: "grp",
-	}).Add(&Cfg{
+	}).Add(&cli.Cfg{
 		Name:    "cmd-2",
 		MinArgs: 1,
 	})
-
 	want := map[string]*cmdSpec{
 		"_": {
 			Spec: "-W 'cmd1 grp help'",
@@ -46,6 +46,10 @@ func TestCompgen(t *testing.T) {
 	have := make(map[string]*cmdSpec)
 	newCmdSpec(have, "", &main)
 	assert.Equal(t, want, have)
+
+	b, err := Compgen(&main)
+	assert.NoError(t, err)
+	assert.Contains(t, string(b), "complete -F")
 }
 
 type cmd1 struct {

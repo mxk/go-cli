@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -172,6 +173,21 @@ func (c *Cfg) Help() *bytes.Buffer {
 	w := newWriter(c)
 	w.help()
 	return &w.Buffer
+}
+
+// Children returns all sub-commands of c sorted by name.
+func (c *Cfg) Children() []*Cfg {
+	if len(c.cmds) == 0 {
+		return nil
+	}
+	cmds := make([]*Cfg, 0, len(c.cmds))
+	for name, child := range c.cmds {
+		if name == Name(child) {
+			cmds = append(cmds, child)
+		}
+	}
+	sort.Slice(cmds, func(i, j int) bool { return Name(cmds[i]) < Name(cmds[j]) })
+	return cmds
 }
 
 // fullName returns the fully qualified command name consisting of the prefix,

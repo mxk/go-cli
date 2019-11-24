@@ -1,4 +1,5 @@
-package cli
+// Package bash generates CLI auto-complete scripts.
+package bash
 
 import (
 	"bytes"
@@ -6,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/mxk/go-cli"
 )
 
 const tpl = `_{{.Bin}}() {
@@ -67,7 +70,7 @@ complete -F _{{.Bin}} {{.Bin}}
 
 // Compgen returns a bash auto-complete script for command hierarchy rooted at
 // c. It assumes that c.Name is "", as is the case for cli.Main.
-func Compgen(c *Cfg) ([]byte, error) {
+func Compgen(c *cli.Cfg) ([]byte, error) {
 	cmds := make(map[string]*cmdSpec)
 	newCmdSpec(cmds, "", c)
 	var b bytes.Buffer
@@ -76,7 +79,7 @@ func Compgen(c *Cfg) ([]byte, error) {
 		err = t.Execute(&b, struct {
 			Bin  string
 			Cmds map[string]*cmdSpec
-		}{Bin, cmds})
+		}{cli.Bin, cmds})
 	}
 	return b.Bytes(), err
 }
@@ -96,8 +99,8 @@ type cmdSpec struct {
 }
 
 // newCmdSpec adds a cmdSpec entry for c to m.
-func newCmdSpec(m map[string]*cmdSpec, root string, c *Cfg) {
-	names := strings.Split(c.Name, string(nameSep))
+func newCmdSpec(m map[string]*cmdSpec, root string, c *cli.Cfg) {
+	names := strings.Split(c.Name, "|")
 	cs := &cmdSpec{Name: safeName(names[0])}
 	if len(names) > 1 {
 		cs.Refs = names[1:]
@@ -107,13 +110,13 @@ func newCmdSpec(m map[string]*cmdSpec, root string, c *Cfg) {
 	}
 	var spec strings.Builder
 	spec.WriteString("-W '")
-	if len(c.cmds) > 0 {
+	if cmds := c.Children(); len(cmds) > 0 {
 		root += cs.Name + "_"
-		names = append(make([]string, 0, 1+len(c.cmds)), "help")
-		for name, c := range c.cmds {
-			if !c.Hide && name == Name(c) {
+		names = append(make([]string, 0, 1+len(cmds)), "help")
+		for _, c := range cmds {
+			if !c.Hide {
 				newCmdSpec(m, root, c)
-				names = append(names, name)
+				names = append(names, cli.Name(c))
 			}
 		}
 		sort.Strings(names)
@@ -124,7 +127,7 @@ func newCmdSpec(m map[string]*cmdSpec, root string, c *Cfg) {
 		}
 	} else {
 		root += cs.Name
-		NewFlagSet(New(c)).VisitAll(func(f *flag.Flag) {
+		cli.NewFlagSet(cli.New(c)).VisitAll(func(f *flag.Flag) {
 			if cs.Args == nil {
 				cs.Args = make(map[string]string)
 			} else {
