@@ -1,3 +1,5 @@
 module github.com/mxk/go-cli
 
-require github.com/stretchr/testify v1.3.0
+require github.com/stretchr/testify v1.4.0
+
+go 1.13
