@@ -45,14 +45,14 @@ func defineFlags(fs *flag.FlagSet, v reflect.Value) {
 			continue
 		}
 		j := strings.IndexByte(tag, ',')
-		if sp := strings.IndexByte(tag, ' '); 0 <= sp && sp < j {
+		if sp := strings.IndexByte(tag, ' '); 0 <= sp && sp <= j+1 {
 			j = -1
 		}
 		name, usage := "", convQuote(tag[j+1:])
 		if j > 0 {
 			name = tag[:j]
 		} else {
-			name = strings.ToLower(f.Name)
+			name = flagName(f.Name)
 		}
 		switch p := v.Field(i).Addr().Interface().(type) {
 		case *bool:
@@ -118,6 +118,41 @@ func convQuote(usage string) string {
 		}
 	}
 	return usage
+}
+
+// flagName converts Go identifiers to hyphenated flag names (e.g. HelloWorld
+// becomes hello-world).
+func flagName(s string) string {
+	var buf [32]byte
+	b, u := buf[:0], 0
+	for _, c := range []byte(s) {
+		switch {
+		case 'A' <= c && c <= 'Z':
+			if u == 0 && len(b) > 0 && b[len(b)-1] != '-' {
+				b = append(b, '-') // aB -> a-b
+			}
+			c, u = c+('a'-'A'), u+1
+		case 'a' <= c && c <= 'z':
+			if u > 1 {
+				b = append(b[:len(b)-1], '-', b[len(b)-1]) // ABc -> a-bc
+			}
+			u = 0
+		case c == '_':
+			if len(b) == 0 || b[len(b)-1] == '-' {
+				continue
+			}
+			c, u = '-', 0
+		default:
+			if u > 1 {
+				u = 1 // AB1c -> ab1c, A1Bc -> A1-bc
+			}
+		}
+		b = append(b, c)
+	}
+	for len(b) > 0 && b[len(b)-1] == '-' {
+		b = b[:len(b)-1]
+	}
+	return strings.ToLower(string(b))
 }
 
 // boolPtr implements flag.Value for *bool flags.

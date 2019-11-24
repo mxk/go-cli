@@ -4,7 +4,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -36,19 +35,21 @@ func TestNewFlagSet(t *testing.T) {
 		Name     bool `cli:"n,"`
 		NameDesc bool `cli:"ND,Name description"`
 		NoName   bool `cli:"Not a name,"`
-		Quote    bool `cli:",Flag, with {value}"`
+		Quote    bool `cli:"Flag, with {value}"`
 		NoQuote  bool `cli:"Flag {without value}"`
+		Verbose  bool `cli:"V,Verbose"`
 	}
 	usage := map[string]string{
-		"s1":      "",
-		"s2":      "",
-		"nodesc":  "",
-		"desc":    "Description",
-		"n":       "",
-		"ND":      "Name description",
-		"noname":  "Not a name,",
-		"quote":   "Flag, with `value`",
-		"noquote": "Flag {without value}",
+		"s1":       "",
+		"s2":       "",
+		"no-desc":  "",
+		"desc":     "Description",
+		"n":        "",
+		"ND":       "Name description",
+		"no-name":  "Not a name,",
+		"quote":    "Flag, with `value`",
+		"no-quote": "Flag {without value}",
+		"V":        "Verbose",
 	}
 
 	have := T{S1: S1{true}, NoDesc: true}
@@ -64,8 +65,8 @@ func TestNewFlagSet(t *testing.T) {
 			return
 		}
 		assert.Equal(t, u, f.Usage, "%s", f.Name)
-		defVal := tf[f.Name == "s1" || f.Name == "nodesc"]
-		strVal := tf[f.Name == "s2" || f.Name == "nodesc"]
+		defVal := tf[f.Name == "s1" || f.Name == "no-desc"]
+		strVal := tf[f.Name == "s2" || f.Name == "no-desc"]
 		assert.Equal(t, defVal, f.DefValue, "%s", f.Name)
 		assert.Equal(t, strVal, f.Value.String(), "%s", f.Name)
 		delete(usage, f.Name)
@@ -121,14 +122,14 @@ func TestFlagTypes(t *testing.T) {
 		{"Uint64", "0", "-uint64=2", uint64(2), "2"},
 		{"XY", "X", "-xy=y", XY('Y'), "Y"},
 
-		{"BoolPtr", "false", "-boolptr", ptr(true), "true"},
-		{"DurationPtr", "0s", "-durationptr=2s", ptr(2 * time.Second), "2s"},
-		{"Float64Ptr", "0", "-float64ptr=0.2", ptr(0.2), "0.2"},
-		{"IntPtr", "0", "-intptr=2", ptr(2), "2"},
-		{"Int64Ptr", "0", "-int64ptr=-2", ptr(int64(-2)), "-2"},
-		{"StringPtr", "", "-stringptr=y", ptr("y"), "y"},
-		{"UintPtr", "0", "-uintptr=3", ptr(uint(3)), "3"},
-		{"Uint64Ptr", "0", "-uint64ptr=4", ptr(uint64(4)), "4"},
+		{"BoolPtr", "false", "-bool-ptr", ptr(true), "true"},
+		{"DurationPtr", "0s", "-duration-ptr=2s", ptr(2 * time.Second), "2s"},
+		{"Float64Ptr", "0", "-float64-ptr=0.2", ptr(0.2), "0.2"},
+		{"IntPtr", "0", "-int-ptr=2", ptr(2), "2"},
+		{"Int64Ptr", "0", "-int64-ptr=-2", ptr(int64(-2)), "-2"},
+		{"StringPtr", "", "-string-ptr=y", ptr("y"), "y"},
+		{"UintPtr", "0", "-uint-ptr=3", ptr(uint(3)), "3"},
+		{"Uint64Ptr", "0", "-uint64-ptr=4", ptr(uint64(4)), "4"},
 
 		{"Slice", "[]", "-slice=a -slice=b", []string{"a", "b"}, "[a b]"},
 		{"Map", "{}", "-map=a=1 -map=b=2", map[string]string{"a": "1", "b": "2"}, "{a=1 b=2}"},
@@ -141,7 +142,7 @@ func TestFlagTypes(t *testing.T) {
 	for _, tc := range tests {
 		args = append(args, split(tc.Set)...)
 		v.FieldByName(tc.Name).Set(reflect.ValueOf(tc.Get))
-		flagMap[strings.ToLower(tc.Name)] = tc
+		flagMap[flagName(tc.Name)] = tc
 	}
 	fs := NewFlagSet(&have)
 	fs.SetOutput(ioutil.Discard)
@@ -161,6 +162,67 @@ func TestFlagTypes(t *testing.T) {
 		delete(flagMap, f.Name)
 	})
 	assert.Empty(t, flagMap)
+}
+
+func TestFlagName(t *testing.T) {
+	tests := []struct{ name, want string }{
+		{"", ""},
+		{"X", "x"},
+		{"x", "x"},
+		{"_", ""},
+
+		{"XY", "xy"},
+		{"Xy", "xy"},
+		{"xY", "x-y"},
+		{"xy", "xy"},
+
+		{"_XY", "xy"},
+		{"__XY", "xy"},
+		{"X_Y", "x-y"},
+		{"X_y", "x-y"},
+		{"x_Y", "x-y"},
+		{"x__y", "x-y"},
+		{"XY_", "xy"},
+		{"XY__", "xy"},
+
+		{"ABCD", "abcd"},
+		{"ABCd", "ab-cd"},
+		{"ABcD", "a-bc-d"},
+		{"ABcd", "a-bcd"},
+		{"AbCD", "ab-cd"},
+		{"AbCd", "ab-cd"},
+		{"AbcD", "abc-d"},
+		{"Abcd", "abcd"},
+		{"aBCD", "a-bcd"},
+		{"aBCd", "a-b-cd"},
+		{"aBcD", "a-bc-d"},
+		{"aBcd", "a-bcd"},
+		{"abCD", "ab-cd"},
+		{"abCd", "ab-cd"},
+		{"abcD", "abc-d"},
+		{"abcd", "abcd"},
+
+		{"1A", "1-a"},
+		{"1a", "1a"},
+		{"A1", "a1"},
+		{"a1", "a1"},
+
+		{"A1B2", "a1b2"},
+		{"A1b2", "a1b2"},
+		{"a1B2", "a1-b2"},
+		{"a1b2", "a1b2"},
+		{"AB1C", "ab1c"},
+		{"AB1c", "ab1c"},
+		{"Ab1C", "ab1-c"},
+		{"Ab1c", "ab1c"},
+		{"A1BC", "a1bc"},
+		{"A1Bc", "a1-bc"},
+		{"A1bC", "a1b-c"},
+		{"A1bc", "a1bc"},
+	}
+	for _, tc := range tests {
+		assert.Equal(t, tc.want, flagName(tc.name), "%+v", tc)
+	}
 }
 
 type XY byte
