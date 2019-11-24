@@ -8,12 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type helpCmd struct {
-	ci  *Info
-	Opt string `cli:"Option description"`
-}
+type helpCmd struct{ Opt string `cli:"Option description"` }
 
-func (cmd *helpCmd) Info() *Info          { return cmd.ci }
 func (*helpCmd) Main(args []string) error { return nil }
 func (*helpCmd) Help(w *Writer) {
 	w.Text("Command help.")
@@ -21,21 +17,21 @@ func (*helpCmd) Help(w *Writer) {
 }
 
 func TestHelp(t *testing.T) {
-	var g, c1, c2 Info
-	g = Info{
+	g := Cfg{
 		Summary: "Group",
-		New:     newTestCmd(&g, nil),
+		New:     newTestCmd(nil),
 	}
-	c1 = *g.Add(&Info{
+	c1 := g.Add(&Cfg{
 		Name:    "c1",
 		Summary: "Command 1",
-		New:     newTestCmd(&c1, nil),
+		New:     newTestCmd(nil),
 	})
-	c2 = *g.Add(&Info{
-		Name:    "c2|c",
+	c2 := g.Add(&Cfg{Name: "c2"})
+	c3 := c2.Add(&Cfg{
+		Name:    "c3|c",
 		Usage:   "usage",
-		Summary: "Command 2",
-		New:     func() Cmd { return &helpCmd{ci: &c2} },
+		Summary: "Command 3",
+		New:     func() Cmd { return &helpCmd{} },
 	})
 	Bin = "bin"
 	assert.Equal(t, Dedent(`
@@ -47,7 +43,7 @@ func TestHelp(t *testing.T) {
 
 		Commands:
 		  c1  Command 1
-		  c2  Command 2
+		  c2
 
 	`)[1:], g.Help().String())
 	assert.Equal(t, Dedent(`
@@ -58,8 +54,17 @@ func TestHelp(t *testing.T) {
 
 	`)[1:], c1.Help().String())
 	assert.Equal(t, Dedent(`
-		Usage: bin {c2|c} usage
-		       bin {c2|c} help
+		Usage: bin c2 <command> [options] ...
+		       bin c2 <command> help
+		       bin c2 help [command]
+
+		Commands:
+		  c3  Command 3
+
+	`)[1:], c2.Help().String())
+	assert.Equal(t, Dedent(`
+		Usage: bin c2 {c3|c} usage
+		       bin c2 {c3|c} help
 
 		Command help.
 
@@ -69,7 +74,7 @@ func TestHelp(t *testing.T) {
 		  -opt string
 		    	Option description
 
-	`)[1:], c2.Help().String())
+	`)[1:], c3.Help().String())
 }
 
 func TestDedent(t *testing.T) {

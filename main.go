@@ -14,18 +14,14 @@ var Bin = filepath.Base(os.Args[0])
 // Debug determines whether to print debugging information.
 var Debug = false
 
-// Exit is called by Info.Run() to terminate the process.
+// Exit is called by Cfg.Run() to terminate the process.
 var Exit = os.Exit
 
-// Main may be used as the common root of all commands in a CLI program. It is
-// normally called from main() as follows:
+// Main is the common root of all commands in a CLI program. It is normally
+// called as follows:
 //
-//	func main() {
-//		cli.Main.Run(os.Args[1:])
-//	}
-var Main Info
-
-func init() { Main.New = func() Cmd { return (*nilCmd)(&Main) } }
+//	func main() { cli.Main.Run() }
+var Main Cfg
 
 // DebugFromEnv sets the Debug flag from the specified environment variable.
 func DebugFromEnv(key string) {
@@ -64,23 +60,6 @@ type ExitCode int
 // Error implements error interface.
 func (e ExitCode) Error() string {
 	return fmt.Sprintf("exit code %d", int(e))
-}
-
-// nilCmd implements Cmd interface for commands without their own constructor.
-type nilCmd Info
-
-func (cmd *nilCmd) Info() *Info { return (*Info)(cmd) }
-
-func (cmd *nilCmd) Main(args []string) error {
-	w := newWriter(cmd.Info())
-	defer w.done(os.Stderr, 2)
-	if cmd.cmds == nil {
-		w.WriteString("Command not implemented\n")
-	} else {
-		w.WriteString("Specify command:\n")
-		w.commands()
-	}
-	return nil
 }
 
 // Sum returns the number of arguments that are true. This can be used to test

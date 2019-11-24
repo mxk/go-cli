@@ -7,14 +7,14 @@ import (
 )
 
 func TestCompgen(t *testing.T) {
-	var main Info
-	main.Add(&Info{
+	var main Cfg
+	main.Add(&Cfg{
 		Name: "cmd1|c1",
 		New:  func() Cmd { return new(cmd1) },
 	})
-	main.Add(&Info{
+	main.Add(&Cfg{
 		Name: "grp",
-	}).Add(&Info{
+	}).Add(&Cfg{
 		Name:    "cmd-2",
 		MinArgs: 1,
 	})
@@ -55,5 +55,4 @@ type cmd1 struct {
 	XZ string `cli:"x-z,"`
 }
 
-func (*cmd1) Info() *Info              { return nil }
 func (*cmd1) Main(args []string) error { return nil }

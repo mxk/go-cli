@@ -66,10 +66,10 @@ complete -F _{{.Bin}} {{.Bin}}
 `
 
 // Compgen returns a bash auto-complete script for command hierarchy rooted at
-// ci. It assumes that ci.Name is "", as is the case for cli.Main.
-func Compgen(ci *Info) ([]byte, error) {
+// c. It assumes that c.Name is "", as is the case for cli.Main.
+func Compgen(c *Cfg) ([]byte, error) {
 	cmds := make(map[string]*cmdSpec)
-	newCmdSpec(cmds, "", ci)
+	newCmdSpec(cmds, "", c)
 	var b bytes.Buffer
 	t, err := template.New("").Parse(tpl)
 	if err == nil {
@@ -95,9 +95,9 @@ type cmdSpec struct {
 	Args map[string]string
 }
 
-// newCmdSpec adds a cmdSpec entry for ci to m.
-func newCmdSpec(m map[string]*cmdSpec, root string, ci *Info) {
-	names := strings.Split(ci.Name, string(nameSep))
+// newCmdSpec adds a cmdSpec entry for c to m.
+func newCmdSpec(m map[string]*cmdSpec, root string, c *Cfg) {
+	names := strings.Split(c.Name, string(nameSep))
 	cs := &cmdSpec{Name: safeName(names[0])}
 	if len(names) > 1 {
 		cs.Refs = names[1:]
@@ -107,12 +107,12 @@ func newCmdSpec(m map[string]*cmdSpec, root string, ci *Info) {
 	}
 	var spec strings.Builder
 	spec.WriteString("-W '")
-	if len(ci.cmds) > 0 {
+	if len(c.cmds) > 0 {
 		root += cs.Name + "_"
-		names = append(make([]string, 0, 1+len(ci.cmds)), "help")
-		for name, ci := range ci.cmds {
-			if !ci.Hide && name == ci.PrimaryName() {
-				newCmdSpec(m, root, ci)
+		names = append(make([]string, 0, 1+len(c.cmds)), "help")
+		for name, c := range c.cmds {
+			if !c.Hide && name == Name(c) {
+				newCmdSpec(m, root, c)
 				names = append(names, name)
 			}
 		}
@@ -124,7 +124,7 @@ func newCmdSpec(m map[string]*cmdSpec, root string, ci *Info) {
 		}
 	} else {
 		root += cs.Name
-		NewFlagSet(ci.New()).VisitAll(func(f *flag.Flag) {
+		NewFlagSet(New(c)).VisitAll(func(f *flag.Flag) {
 			if cs.Args == nil {
 				cs.Args = make(map[string]string)
 			} else {
@@ -148,7 +148,7 @@ func newCmdSpec(m map[string]*cmdSpec, root string, ci *Info) {
 		})
 	}
 	spec.WriteByte('\'')
-	if ci.MaxArgs > 0 || ci.MaxArgs < ci.MinArgs {
+	if c.MaxArgs > 0 || c.MaxArgs < c.MinArgs {
 		spec.WriteString(" -o bashdefault")
 	}
 	cs.Spec = spec.String()

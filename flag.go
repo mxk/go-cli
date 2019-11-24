@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// ErrHelp is the error returned if help is requested.
+var ErrHelp = flag.ErrHelp
+
 // NewFlagSet defines flags using field tags in s, which should be a struct
 // pointer.
 func NewFlagSet(s interface{}) *flag.FlagSet {

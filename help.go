@@ -12,12 +12,12 @@ import (
 // Writer writes command help information to a buffer.
 type Writer struct {
 	bytes.Buffer
-	*Info
+	*Cfg
 }
 
 // newWriter returns a new Writer instance.
-func newWriter(ci *Info) Writer {
-	w := Writer{Info: ci}
+func newWriter(c *Cfg) Writer {
+	w := Writer{Cfg: c}
 	w.Grow(4096)
 	return w
 }
@@ -47,7 +47,7 @@ func (w *Writer) Text(s string) {
 // help writes command help information to w.
 func (w *Writer) help() {
 	w.usage()
-	cmd := w.New()
+	cmd := New(w.Cfg)
 	if h, ok := cmd.(Helper); ok {
 		w.WriteByte('\n')
 		h.Help(w)
@@ -103,8 +103,8 @@ func (w *Writer) usage() {
 // commands writes a list of all commands with their summaries to w.
 func (w *Writer) commands() {
 	names, maxLen := make([]string, 0, len(w.cmds)), 0
-	for name, ci := range w.cmds {
-		if !ci.Hide && name == ci.PrimaryName() {
+	for name, c := range w.cmds {
+		if !c.Hide && name == Name(c) {
 			if names = append(names, name); maxLen < len(name) {
 				maxLen = len(name)
 			}
