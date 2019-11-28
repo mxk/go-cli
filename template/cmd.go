@@ -38,8 +38,8 @@ func (c *Cmd) Write(data interface{}) error {
 	if err := c.Execute(&b, data); err != nil {
 		return err
 	}
-	return cli.WriteFile(c.Out, func(w io.Writer) error {
-		_, err := b.WriteTo(w)
+	return cli.WriteFileAtomic(c.Out, func(f *os.File) error {
+		_, err := b.WriteTo(f)
 		return err
 	})
 }
