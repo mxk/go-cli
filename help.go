@@ -103,15 +103,17 @@ func (w *Writer) usage() {
 func (w *Writer) commands() {
 	cmds, maxLen := w.Children(), 0
 	for _, c := range cmds {
-		if name := Name(c); maxLen < len(name) {
+		if name := Name(c); maxLen < len(name) && !c.Hide {
 			maxLen = len(name)
 		}
 	}
 	for _, c := range cmds {
-		if c.Summary == "" {
-			fmt.Fprintf(w, "  %s\n", Name(c))
-		} else {
-			fmt.Fprintf(w, "  %-*s  %s\n", maxLen, Name(c), c.Summary)
+		if !c.Hide {
+			if c.Summary == "" {
+				fmt.Fprintf(w, "  %s\n", Name(c))
+			} else {
+				fmt.Fprintf(w, "  %-*s  %s\n", maxLen, Name(c), c.Summary)
+			}
 		}
 	}
 }
